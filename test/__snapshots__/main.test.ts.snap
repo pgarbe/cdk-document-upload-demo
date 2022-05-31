@@ -121,7 +121,20 @@ Object {
         ],
       },
     },
-    "UploadBucket": Object {
+    "PdfBucketLink": Object {
+      "Value": Object {
+        "Fn::Join": Array [
+          "",
+          Array [
+            "https://s3.console.aws.amazon.com/s3/buckets/",
+            Object {
+              "Ref": "PdfBucketFA9E115A",
+            },
+          ],
+        ],
+      },
+    },
+    "UploadBucketLink": Object {
       "Value": Object {
         "Fn::Join": Array [
           "",
@@ -355,7 +368,7 @@ def submit_response(event: dict, context, response_status: str, error_message: s
           "S3Bucket": Object {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "ca7800b5abd8e85a986f2ae783a9f952b78298cf284bc2154f6931f2470ae960.zip",
+          "S3Key": "7a055edbb6fa07c4d10109abe4c4954a9748a0cbdb1343492d21cfd4f78e06ba.zip",
         },
         "Environment": Object {
           "Variables": Object {
@@ -366,7 +379,7 @@ def submit_response(event: dict, context, response_status: str, error_message: s
                 "DNSName",
               ],
             },
-            "TARGET_BUCKET": Object {
+            "TARGET_BUCKET_NAME": Object {
               "Ref": "PdfBucketFA9E115A",
             },
           },
@@ -379,6 +392,7 @@ def submit_response(event: dict, context, response_status: str, error_message: s
           ],
         },
         "Runtime": "nodejs14.x",
+        "Timeout": 180,
       },
       "Type": "AWS::Lambda::Function",
     },
@@ -417,6 +431,40 @@ def submit_response(event: dict, context, response_status: str, error_message: s
       "Properties": Object {
         "PolicyDocument": Object {
           "Statement": Array [
+            Object {
+              "Action": Array [
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "PdfBucketFA9E115A",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "PdfBucketFA9E115A",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
             Object {
               "Action": Array [
                 "s3:GetObject*",
@@ -609,7 +657,7 @@ def submit_response(event: dict, context, response_status: str, error_message: s
           "Fn::Join": Array [
             "",
             Array [
-              "{\\"StartAt\\":\\"ConvertDoc\\",\\"States\\":{\\"ConvertDoc\\":{\\"Next\\":\\"Job Complete?\\",\\"Retry\\":[{\\"ErrorEquals\\":[\\"Lambda.ServiceException\\",\\"Lambda.AWSLambdaException\\",\\"Lambda.SdkClientException\\"],\\"IntervalSeconds\\":2,\\"MaxAttempts\\":6,\\"BackoffRate\\":2}],\\"Type\\":\\"Task\\",\\"OutputPath\\":\\"$.convertDocResult\\",\\"Resource\\":\\"arn:",
+              "{\\"StartAt\\":\\"ConvertDoc\\",\\"States\\":{\\"ConvertDoc\\":{\\"Next\\":\\"SendSuccess\\",\\"Retry\\":[{\\"ErrorEquals\\":[\\"Lambda.ServiceException\\",\\"Lambda.AWSLambdaException\\",\\"Lambda.SdkClientException\\"],\\"IntervalSeconds\\":2,\\"MaxAttempts\\":6,\\"BackoffRate\\":2}],\\"Catch\\":[{\\"ErrorEquals\\":[\\"States.ALL\\"],\\"Next\\":\\"Job Failed\\"}],\\"Type\\":\\"Task\\",\\"Resource\\":\\"arn:",
               Object {
                 "Ref": "AWS::Partition",
               },
@@ -620,7 +668,11 @@ def submit_response(event: dict, context, response_status: str, error_message: s
                   "Arn",
                 ],
               },
-              "\\",\\"Payload.$\\":\\"$\\"}},\\"Job Complete?\\":{\\"Type\\":\\"Choice\\",\\"Choices\\":[{\\"Variable\\":\\"$.convertDocResult.status\\",\\"StringEquals\\":\\"FAILED\\",\\"Next\\":\\"Job Failed\\"},{\\"Variable\\":\\"$.convertDocResult.status\\",\\"StringEquals\\":\\"SUCCEEDED\\",\\"Next\\":\\"FinalState\\"}],\\"Default\\":\\"Job Failed\\"},\\"Job Failed\\":{\\"Type\\":\\"Fail\\",\\"Error\\":\\"DescribeJob returned FAILED\\",\\"Cause\\":\\"AWS Batch Job Failed\\"},\\"FinalState\\":{\\"Type\\":\\"Pass\\",\\"End\\":true}},\\"TimeoutSeconds\\":300}",
+              "\\",\\"Payload.$\\":\\"$\\"}},\\"SendSuccess\\":{\\"End\\":true,\\"Type\\":\\"Task\\",\\"Resource\\":\\"arn:",
+              Object {
+                "Ref": "AWS::Partition",
+              },
+              ":states:::events:putEvents\\",\\"Parameters\\":{\\"Entries\\":[{\\"Detail.$\\":\\"$.Payload.convertResult\\",\\"DetailType\\":\\"DOCUMENT_CONVERTED_EVENT\\",\\"Source\\":\\"DocumentUploadDemo\\"}]}},\\"Job Failed\\":{\\"Type\\":\\"Fail\\",\\"Error\\":\\"INVALID_DOCUMENT\\",\\"Cause\\":\\"Gotenberg Convert Job Failed\\"}},\\"TimeoutSeconds\\":300}",
             ],
           ],
         },
@@ -745,6 +797,30 @@ def submit_response(event: dict, context, response_status: str, error_message: s
                   ],
                 },
               ],
+            },
+            Object {
+              "Action": "events:PutEvents",
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::Join": Array [
+                  "",
+                  Array [
+                    "arn:",
+                    Object {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":events:",
+                    Object {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    Object {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":event-bus/default",
+                  ],
+                ],
+              },
             },
             Object {
               "Action": Array [
@@ -1841,6 +1917,10 @@ def submit_response(event: dict, context, response_status: str, error_message: s
       "Type": "AWS::ECS::Cluster",
     },
     "GotenbergLB95C190B1": Object {
+      "DependsOn": Array [
+        "VpcPublicSubnet1DefaultRoute3DA9E72A",
+        "VpcPublicSubnet2DefaultRoute97F91067",
+      ],
       "Properties": Object {
         "LoadBalancerAttributes": Array [
           Object {
@@ -1848,7 +1928,7 @@ def submit_response(event: dict, context, response_status: str, error_message: s
             "Value": "false",
           },
         ],
-        "Scheme": "internal",
+        "Scheme": "internet-facing",
         "SecurityGroups": Array [
           Object {
             "Fn::GetAtt": Array [
@@ -1859,10 +1939,10 @@ def submit_response(event: dict, context, response_status: str, error_message: s
         ],
         "Subnets": Array [
           Object {
-            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+            "Ref": "VpcPublicSubnet1Subnet5C2D37C4",
           },
           Object {
-            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+            "Ref": "VpcPublicSubnet2Subnet691E08A3",
           },
         ],
         "Type": "application",
@@ -2079,7 +2159,7 @@ def submit_response(event: dict, context, response_status: str, error_message: s
             ],
           },
         ],
-        "Cpu": "256",
+        "Cpu": "1024",
         "ExecutionRoleArn": Object {
           "Fn::GetAtt": Array [
             "GotenbergTaskDefExecutionRole9DFD1174",
@@ -2087,7 +2167,7 @@ def submit_response(event: dict, context, response_status: str, error_message: s
           ],
         },
         "Family": "testGotenbergTaskDef40D8B00F",
-        "Memory": "512",
+        "Memory": "2048",
         "NetworkMode": "awsvpc",
         "RequiresCompatibilities": Array [
           "FARGATE",

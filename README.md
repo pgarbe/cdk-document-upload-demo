@@ -3,5 +3,6 @@ Convert uploaded office documents to PDF using project Gotenberg. Serverless app
 
 ## Links
 
-https://gotenberg.dev/
-https://github.com/shelfio/aws-lambda-libreoffice
+https://gotenberg.dev/  
+https://github.com/shelfio/aws-lambda-libreoffice  
+https://www.linkedin.com/pulse/how-build-automatic-grading-solution-handwriting-aws-wong/  

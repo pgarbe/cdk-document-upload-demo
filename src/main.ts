@@ -26,7 +26,6 @@ export class DocumentUploadStack extends cdk.Stack {
       publicLoadBalancer: true,
       taskImageOptions: {
         image: cdk.aws_ecs.ContainerImage.fromEcrRepository(repo, '7'),
-        // image: cdk.aws_ecs.ContainerImage.fromRegistry('gotenberg/gotenberg'),
         containerPort: 3000,
       },
       cpu: 1024,

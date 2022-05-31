@@ -49,7 +49,6 @@
     "@pgarbe/cdk-ecr-sync": "^0.5.28",
     "aws-cdk-lib": "^2.25.0",
     "aws-sdk": "^2.1145.0",
-    "axios": "^0.27.2",
     "constructs": "^10.0.5",
     "gotenberg-js-client": "^0.7.2"
   },

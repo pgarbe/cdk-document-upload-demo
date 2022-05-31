@@ -10,7 +10,6 @@ const project = new pj.awscdk.AwsCdkTypeScriptApp({
   deps: [
     '@pgarbe/cdk-ecr-sync',
     '@aws-solutions-constructs/aws-s3-stepfunctions',
-    'axios',
     'gotenberg-js-client',
     'aws-sdk',
   ],
