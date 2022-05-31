@@ -53,8 +53,6 @@ export class DocumentUploadStack extends cdk.Stack {
 
     const convertJob = new cdk.aws_stepfunctions_tasks.LambdaInvoke(this, 'ConvertDoc', {
       lambdaFunction: convertDocLambda,
-      // Pass just the field named "guid" into the Lambda, put the
-      // Lambda's result in a field called "status" in the response
     });
 
     const jobFailed = new cdk.aws_stepfunctions.Fail(this, 'Job Failed', {

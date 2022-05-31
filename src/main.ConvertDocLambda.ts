@@ -25,9 +25,6 @@ export async function handler(evt: any) {
   const bucket = evt.detail.bucket.name;
   const key = evt.detail.object.key;
 
-  console.log(`${bucket}/${key}`);
-  console.log(`${gotenbergUrl}`);
-
   // Get document
   const data = await client.getObject({ Bucket: bucket, Key: key }).promise();
 
