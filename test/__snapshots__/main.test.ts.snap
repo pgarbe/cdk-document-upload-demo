@@ -2,11 +2,2630 @@
 
 exports[`Snapshot 1`] = `
 Object {
+  "Mappings": Object {
+    "ServiceprincipalMap": Object {
+      "af-south-1": Object {
+        "states": "states.af-south-1.amazonaws.com",
+      },
+      "ap-east-1": Object {
+        "states": "states.ap-east-1.amazonaws.com",
+      },
+      "ap-northeast-1": Object {
+        "states": "states.ap-northeast-1.amazonaws.com",
+      },
+      "ap-northeast-2": Object {
+        "states": "states.ap-northeast-2.amazonaws.com",
+      },
+      "ap-northeast-3": Object {
+        "states": "states.ap-northeast-3.amazonaws.com",
+      },
+      "ap-south-1": Object {
+        "states": "states.ap-south-1.amazonaws.com",
+      },
+      "ap-southeast-1": Object {
+        "states": "states.ap-southeast-1.amazonaws.com",
+      },
+      "ap-southeast-2": Object {
+        "states": "states.ap-southeast-2.amazonaws.com",
+      },
+      "ap-southeast-3": Object {
+        "states": "states.ap-southeast-3.amazonaws.com",
+      },
+      "ca-central-1": Object {
+        "states": "states.ca-central-1.amazonaws.com",
+      },
+      "cn-north-1": Object {
+        "states": "states.cn-north-1.amazonaws.com",
+      },
+      "cn-northwest-1": Object {
+        "states": "states.cn-northwest-1.amazonaws.com",
+      },
+      "eu-central-1": Object {
+        "states": "states.eu-central-1.amazonaws.com",
+      },
+      "eu-north-1": Object {
+        "states": "states.eu-north-1.amazonaws.com",
+      },
+      "eu-south-1": Object {
+        "states": "states.eu-south-1.amazonaws.com",
+      },
+      "eu-south-2": Object {
+        "states": "states.eu-south-2.amazonaws.com",
+      },
+      "eu-west-1": Object {
+        "states": "states.eu-west-1.amazonaws.com",
+      },
+      "eu-west-2": Object {
+        "states": "states.eu-west-2.amazonaws.com",
+      },
+      "eu-west-3": Object {
+        "states": "states.eu-west-3.amazonaws.com",
+      },
+      "me-south-1": Object {
+        "states": "states.me-south-1.amazonaws.com",
+      },
+      "sa-east-1": Object {
+        "states": "states.sa-east-1.amazonaws.com",
+      },
+      "us-east-1": Object {
+        "states": "states.us-east-1.amazonaws.com",
+      },
+      "us-east-2": Object {
+        "states": "states.us-east-2.amazonaws.com",
+      },
+      "us-gov-east-1": Object {
+        "states": "states.us-gov-east-1.amazonaws.com",
+      },
+      "us-gov-west-1": Object {
+        "states": "states.us-gov-west-1.amazonaws.com",
+      },
+      "us-iso-east-1": Object {
+        "states": "states.amazonaws.com",
+      },
+      "us-iso-west-1": Object {
+        "states": "states.amazonaws.com",
+      },
+      "us-isob-east-1": Object {
+        "states": "states.amazonaws.com",
+      },
+      "us-west-1": Object {
+        "states": "states.us-west-1.amazonaws.com",
+      },
+      "us-west-2": Object {
+        "states": "states.us-west-2.amazonaws.com",
+      },
+    },
+  },
+  "Outputs": Object {
+    "GotenbergLoadBalancerDNS9B192B8B": Object {
+      "Value": Object {
+        "Fn::GetAtt": Array [
+          "GotenbergLB95C190B1",
+          "DNSName",
+        ],
+      },
+    },
+    "GotenbergServiceURL723158B0": Object {
+      "Value": Object {
+        "Fn::Join": Array [
+          "",
+          Array [
+            "http://",
+            Object {
+              "Fn::GetAtt": Array [
+                "GotenbergLB95C190B1",
+                "DNSName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+    "UploadBucket": Object {
+      "Value": Object {
+        "Fn::Join": Array [
+          "",
+          Array [
+            "https://s3.console.aws.amazon.com/s3/buckets/",
+            Object {
+              "Ref": "ConvertJobS3BucketBB1DB4DD",
+            },
+          ],
+        ],
+      },
+    },
+  },
   "Parameters": Object {
     "BootstrapVersion": Object {
       "Default": "/cdk-bootstrap/hnb659fds/version",
       "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
       "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": Object {
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691": Object {
+      "DependsOn": Array [
+        "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+        "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+      ],
+      "Metadata": Object {
+        "cfn_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "W58",
+              "reason": "Lambda functions has the required permission to write CloudWatch Logs. It uses custom policy instead of arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole with tighter permissions.",
+            },
+            Object {
+              "id": "W89",
+              "reason": "This is not a rule for the general case, just for specific use cases/industries",
+            },
+            Object {
+              "id": "W92",
+              "reason": "Impossible for us to define the correct concurrency for clients",
+            },
+          ],
+        },
+      },
+      "Properties": Object {
+        "Code": Object {
+          "ZipFile": "import boto3  # type: ignore
+import json
+import logging
+import urllib.request
+
+s3 = boto3.client(\\"s3\\")
+
+EVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'
+
+CONFIGURATION_TYPES = [\\"TopicConfigurations\\", \\"QueueConfigurations\\", \\"LambdaFunctionConfigurations\\"]
+
+def handler(event: dict, context):
+  response_status = \\"SUCCESS\\"
+  error_message = \\"\\"
+  try:
+    props = event[\\"ResourceProperties\\"]
+    bucket = props[\\"BucketName\\"]
+    notification_configuration = props[\\"NotificationConfiguration\\"]
+    request_type = event[\\"RequestType\\"]
+    managed = props.get('Managed', 'true').lower() == 'true'
+    stack_id = event['StackId']
+
+    if managed:
+      config = handle_managed(request_type, notification_configuration)
+    else:
+      config = handle_unmanaged(bucket, stack_id, request_type, notification_configuration)
+
+    put_bucket_notification_configuration(bucket, config)
+  except Exception as e:
+    logging.exception(\\"Failed to put bucket notification configuration\\")
+    response_status = \\"FAILED\\"
+    error_message = f\\"Error: {str(e)}. \\"
+  finally:
+    submit_response(event, context, response_status, error_message)
+
+def handle_managed(request_type, notification_configuration):
+  if request_type == 'Delete':
+    return {}
+  return notification_configuration
+
+def handle_unmanaged(bucket, stack_id, request_type, notification_configuration):
+  external_notifications = find_external_notifications(bucket, stack_id)
+
+  if request_type == 'Delete':
+    return external_notifications
+
+  def with_id(notification):
+    notification['Id'] = f\\"{stack_id}-{hash(json.dumps(notification, sort_keys=True))}\\"
+    return notification
+
+  notifications = {}
+  for t in CONFIGURATION_TYPES:
+    external = external_notifications.get(t, [])
+    incoming = [with_id(n) for n in notification_configuration.get(t, [])]
+    notifications[t] = external + incoming
+
+  if EVENTBRIDGE_CONFIGURATION in notification_configuration:
+    notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]
+  elif EVENTBRIDGE_CONFIGURATION in external_notifications:
+    notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]
+
+  return notifications
+
+def find_external_notifications(bucket, stack_id):
+  existing_notifications = get_bucket_notification_configuration(bucket)
+  external_notifications = {}
+  for t in CONFIGURATION_TYPES:
+    external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f\\"{stack_id}-\\")]
+
+  if EVENTBRIDGE_CONFIGURATION in existing_notifications:
+    external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]
+
+  return external_notifications
+
+def get_bucket_notification_configuration(bucket):
+  return s3.get_bucket_notification_configuration(Bucket=bucket)
+
+def put_bucket_notification_configuration(bucket, notification_configuration):
+  s3.put_bucket_notification_configuration(Bucket=bucket, NotificationConfiguration=notification_configuration)
+
+def submit_response(event: dict, context, response_status: str, error_message: str):
+  response_body = json.dumps(
+    {
+      \\"Status\\": response_status,
+      \\"Reason\\": f\\"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}\\",
+      \\"PhysicalResourceId\\": event.get(\\"PhysicalResourceId\\") or event[\\"LogicalResourceId\\"],
+      \\"StackId\\": event[\\"StackId\\"],
+      \\"RequestId\\": event[\\"RequestId\\"],
+      \\"LogicalResourceId\\": event[\\"LogicalResourceId\\"],
+      \\"NoEcho\\": False,
+    }
+  ).encode(\\"utf-8\\")
+  headers = {\\"content-type\\": \\"\\", \\"content-length\\": str(len(response_body))}
+  try:
+    req = urllib.request.Request(url=event[\\"ResponseURL\\"], headers=headers, data=response_body, method=\\"PUT\\")
+    with urllib.request.urlopen(req) as response:
+      print(response.read().decode(\\"utf-8\\"))
+    print(\\"Status code: \\" + response.reason)
+  except Exception as e:
+      print(\\"send(..) failed executing request.urlopen(..): \\" + str(e))
+",
+        },
+        "Description": "AWS CloudFormation handler for \\"Custom::S3BucketNotifications\\" resources (@aws-cdk/aws-s3)",
+        "Handler": "index.handler",
+        "Role": Object {
+          "Fn::GetAtt": Array [
+            "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.7",
+        "Timeout": 300,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
+              "",
+              Array [
+                "arn:",
+                Object {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36": Object {
+      "Metadata": Object {
+        "cfn_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "W12",
+              "reason": "Bucket resource is '*' due to circular dependency with bucket and role creation at the same time",
+            },
+          ],
+        },
+      },
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "s3:PutBucketNotification",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+        "Roles": Array [
+          Object {
+            "Ref": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConvertDocLambdaD1A743B9": Object {
+      "DependsOn": Array [
+        "ConvertDocLambdaServiceRoleDefaultPolicyD5E1E6AE",
+        "ConvertDocLambdaServiceRoleB66AA5D4",
+      ],
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "ca7800b5abd8e85a986f2ae783a9f952b78298cf284bc2154f6931f2470ae960.zip",
+        },
+        "Environment": Object {
+          "Variables": Object {
+            "AWS_NODEJS_CONNECTION_REUSE_ENABLED": "1",
+            "GOTENBERG_URL": Object {
+              "Fn::GetAtt": Array [
+                "GotenbergLB95C190B1",
+                "DNSName",
+              ],
+            },
+            "TARGET_BUCKET": Object {
+              "Ref": "PdfBucketFA9E115A",
+            },
+          },
+        },
+        "Handler": "index.handler",
+        "Role": Object {
+          "Fn::GetAtt": Array [
+            "ConvertDocLambdaServiceRoleB66AA5D4",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs14.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ConvertDocLambdaServiceRoleB66AA5D4": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
+              "",
+              Array [
+                "arn:",
+                Object {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ConvertDocLambdaServiceRoleDefaultPolicyD5E1E6AE": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "ConvertJobS3BucketBB1DB4DD",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "ConvertJobS3BucketBB1DB4DD",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ConvertDocLambdaServiceRoleDefaultPolicyD5E1E6AE",
+        "Roles": Array [
+          Object {
+            "Ref": "ConvertDocLambdaServiceRoleB66AA5D4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructEventsRule1EE3FBAE": Object {
+      "Properties": Object {
+        "EventPattern": Object {
+          "detail": Object {
+            "bucket": Object {
+              "name": Array [
+                Object {
+                  "Ref": "ConvertJobS3BucketBB1DB4DD",
+                },
+              ],
+            },
+          },
+          "detail-type": Array [
+            "Object Created",
+          ],
+          "source": Array [
+            "aws.s3",
+          ],
+        },
+        "State": "ENABLED",
+        "Targets": Array [
+          Object {
+            "Arn": Object {
+              "Ref": "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineA0EE94CA",
+            },
+            "Id": "Target0",
+            "RoleArn": Object {
+              "Fn::GetAtt": Array [
+                "ConvertJobConvertJobeventrulestepfunctionconstructEventsRuleRole240837A6",
+                "Arn",
+              ],
+            },
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructEventsRuleRole240837A6": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "events.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructEventsRuleRoleDefaultPolicyD64957E9": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "states:StartExecution",
+              "Effect": "Allow",
+              "Resource": Object {
+                "Ref": "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineA0EE94CA",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ConvertJobConvertJobeventrulestepfunctionconstructEventsRuleRoleDefaultPolicyD64957E9",
+        "Roles": Array [
+          Object {
+            "Ref": "ConvertJobConvertJobeventrulestepfunctionconstructEventsRuleRole240837A6",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructExecutionAbortedAlarm46057041": Object {
+      "Properties": Object {
+        "AlarmDescription": "Alarm for the number of executions that aborted exceeded the threshold of 1. ",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": Array [
+          Object {
+            "Name": "StateMachineArn",
+            "Value": Object {
+              "Ref": "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineA0EE94CA",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ExecutionsAborted",
+        "Namespace": "AWS/States",
+        "Period": 300,
+        "Statistic": "Maximum",
+        "Threshold": 1,
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructExecutionFailedAlarmB22984D7": Object {
+      "Properties": Object {
+        "AlarmDescription": "Alarm for the number of executions that failed exceeded the threshold of 1. ",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": Array [
+          Object {
+            "Name": "StateMachineArn",
+            "Value": Object {
+              "Ref": "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineA0EE94CA",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ExecutionsFailed",
+        "Namespace": "AWS/States",
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 1,
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructExecutionThrottledAlarm6C571D96": Object {
+      "Properties": Object {
+        "AlarmDescription": "Alarm for the number of executions that throttled exceeded the threshold of 1. ",
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "Dimensions": Array [
+          Object {
+            "Name": "StateMachineArn",
+            "Value": Object {
+              "Ref": "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineA0EE94CA",
+            },
+          },
+        ],
+        "EvaluationPeriods": 1,
+        "MetricName": "ExecutionThrottled",
+        "Namespace": "AWS/States",
+        "Period": 300,
+        "Statistic": "Sum",
+        "Threshold": 1,
+      },
+      "Type": "AWS::CloudWatch::Alarm",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineA0EE94CA": Object {
+      "DependsOn": Array [
+        "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineRoleDefaultPolicyCEC13246",
+        "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineRole5214D286",
+      ],
+      "Properties": Object {
+        "DefinitionString": Object {
+          "Fn::Join": Array [
+            "",
+            Array [
+              "{\\"StartAt\\":\\"ConvertDoc\\",\\"States\\":{\\"ConvertDoc\\":{\\"Next\\":\\"Job Complete?\\",\\"Retry\\":[{\\"ErrorEquals\\":[\\"Lambda.ServiceException\\",\\"Lambda.AWSLambdaException\\",\\"Lambda.SdkClientException\\"],\\"IntervalSeconds\\":2,\\"MaxAttempts\\":6,\\"BackoffRate\\":2}],\\"Type\\":\\"Task\\",\\"OutputPath\\":\\"$.convertDocResult\\",\\"Resource\\":\\"arn:",
+              Object {
+                "Ref": "AWS::Partition",
+              },
+              ":states:::lambda:invoke\\",\\"Parameters\\":{\\"FunctionName\\":\\"",
+              Object {
+                "Fn::GetAtt": Array [
+                  "ConvertDocLambdaD1A743B9",
+                  "Arn",
+                ],
+              },
+              "\\",\\"Payload.$\\":\\"$\\"}},\\"Job Complete?\\":{\\"Type\\":\\"Choice\\",\\"Choices\\":[{\\"Variable\\":\\"$.convertDocResult.status\\",\\"StringEquals\\":\\"FAILED\\",\\"Next\\":\\"Job Failed\\"},{\\"Variable\\":\\"$.convertDocResult.status\\",\\"StringEquals\\":\\"SUCCEEDED\\",\\"Next\\":\\"FinalState\\"}],\\"Default\\":\\"Job Failed\\"},\\"Job Failed\\":{\\"Type\\":\\"Fail\\",\\"Error\\":\\"DescribeJob returned FAILED\\",\\"Cause\\":\\"AWS Batch Job Failed\\"},\\"FinalState\\":{\\"Type\\":\\"Pass\\",\\"End\\":true}},\\"TimeoutSeconds\\":300}",
+            ],
+          ],
+        },
+        "LoggingConfiguration": Object {
+          "Destinations": Array [
+            Object {
+              "CloudWatchLogsLogGroup": Object {
+                "LogGroupArn": Object {
+                  "Fn::GetAtt": Array [
+                    "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineLogGroupF50C1DB5",
+                    "Arn",
+                  ],
+                },
+              },
+            },
+          ],
+          "Level": "ERROR",
+        },
+        "RoleArn": Object {
+          "Fn::GetAtt": Array [
+            "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineRole5214D286",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::StepFunctions::StateMachine",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineLogGroupF50C1DB5": Object {
+      "DeletionPolicy": "Retain",
+      "Metadata": Object {
+        "cfn_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "W86",
+              "reason": "Retention period for CloudWatchLogs LogGroups are set to 'Never Expire' to preserve customer data indefinitely",
+            },
+            Object {
+              "id": "W84",
+              "reason": "By default CloudWatchLogs LogGroups data is encrypted using the CloudWatch server-side encryption keys (AWS Managed Keys)",
+            },
+          ],
+        },
+      },
+      "Properties": Object {
+        "LogGroupName": "/aws/vendedlogs/states/testconvertjobeventrulestepfunctionconstructstatemachinelog2fe567903d84",
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineRole5214D286": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": Object {
+                  "Fn::FindInMap": Array [
+                    "ServiceprincipalMap",
+                    Object {
+                      "Ref": "AWS::Region",
+                    },
+                    "states",
+                  ],
+                },
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineRoleDefaultPolicyCEC13246": Object {
+      "Metadata": Object {
+        "cfn_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "W12",
+              "reason": "The 'LogDelivery' actions do not support resource-level authorizations",
+            },
+          ],
+        },
+      },
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "logs:CreateLogDelivery",
+                "logs:GetLogDelivery",
+                "logs:UpdateLogDelivery",
+                "logs:DeleteLogDelivery",
+                "logs:ListLogDeliveries",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            Object {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "ConvertDocLambdaD1A743B9",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "ConvertDocLambdaD1A743B9",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            Object {
+              "Action": Array [
+                "logs:PutResourcePolicy",
+                "logs:DescribeResourcePolicies",
+                "logs:DescribeLogGroups",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::Join": Array [
+                  "",
+                  Array [
+                    "arn:",
+                    Object {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":logs:",
+                    Object {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    Object {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":*",
+                  ],
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineRoleDefaultPolicyCEC13246",
+        "Roles": Array [
+          Object {
+            "Ref": "ConvertJobConvertJobeventrulestepfunctionconstructStateMachineRole5214D286",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ConvertJobS3BucketBB1DB4DD": Object {
+      "DeletionPolicy": "Retain",
+      "Properties": Object {
+        "BucketEncryption": Object {
+          "ServerSideEncryptionConfiguration": Array [
+            Object {
+              "ServerSideEncryptionByDefault": Object {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "LifecycleConfiguration": Object {
+          "Rules": Array [
+            Object {
+              "NoncurrentVersionTransitions": Array [
+                Object {
+                  "StorageClass": "GLACIER",
+                  "TransitionInDays": 90,
+                },
+              ],
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "LoggingConfiguration": Object {
+          "DestinationBucketName": Object {
+            "Ref": "ConvertJobS3LoggingBucket8B1D292C",
+          },
+        },
+        "PublicAccessBlockConfiguration": Object {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": Object {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ConvertJobS3BucketNotifications99636E73": Object {
+      "Properties": Object {
+        "BucketName": Object {
+          "Ref": "ConvertJobS3BucketBB1DB4DD",
+        },
+        "Managed": true,
+        "NotificationConfiguration": Object {
+          "EventBridgeConfiguration": Object {},
+        },
+        "ServiceToken": Object {
+          "Fn::GetAtt": Array [
+            "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3BucketNotifications",
+    },
+    "ConvertJobS3BucketPolicy73DA2EA1": Object {
+      "Properties": Object {
+        "Bucket": Object {
+          "Ref": "ConvertJobS3BucketBB1DB4DD",
+        },
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "s3:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "ConvertJobS3BucketBB1DB4DD",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "ConvertJobS3BucketBB1DB4DD",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "ConvertJobS3LoggingBucket8B1D292C": Object {
+      "DeletionPolicy": "Retain",
+      "Metadata": Object {
+        "cfn_nag": Object {
+          "rules_to_suppress": Array [
+            Object {
+              "id": "W35",
+              "reason": "This S3 bucket is used as the access logging bucket for another bucket",
+            },
+          ],
+        },
+      },
+      "Properties": Object {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketEncryption": Object {
+          "ServerSideEncryptionConfiguration": Array [
+            Object {
+              "ServerSideEncryptionByDefault": Object {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": Object {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": Object {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ConvertJobS3LoggingBucketPolicy932BC8BC": Object {
+      "Properties": Object {
+        "Bucket": Object {
+          "Ref": "ConvertJobS3LoggingBucket8B1D292C",
+        },
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "s3:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "ConvertJobS3LoggingBucket8B1D292C",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "ConvertJobS3LoggingBucket8B1D292C",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "EcrSyncArtifactBucket592E7EE3": Object {
+      "DeletionPolicy": "Retain",
+      "Properties": Object {
+        "BucketEncryption": Object {
+          "ServerSideEncryptionConfiguration": Array [
+            Object {
+              "ServerSideEncryptionByDefault": Object {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": Object {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "VersioningConfiguration": Object {
+          "Status": "Enabled",
+        },
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "EcrSyncArtifactBucketPolicy05991E84": Object {
+      "Properties": Object {
+        "Bucket": Object {
+          "Ref": "EcrSyncArtifactBucket592E7EE3",
+        },
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "s3:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "EcrSyncArtifactBucket592E7EE3",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "EcrSyncArtifactBucket592E7EE3",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "EcrSyncPullPushPipelineF0750FB8": Object {
+      "DependsOn": Array [
+        "EcrSyncPullPushPipelineRoleDefaultPolicy553B48F9",
+        "EcrSyncPullPushPipelineRole3DC166BF",
+      ],
+      "Properties": Object {
+        "ArtifactStore": Object {
+          "Location": Object {
+            "Ref": "EcrSyncArtifactBucket592E7EE3",
+          },
+          "Type": "S3",
+        },
+        "RoleArn": Object {
+          "Fn::GetAtt": Array [
+            "EcrSyncPullPushPipelineRole3DC166BF",
+            "Arn",
+          ],
+        },
+        "Stages": Array [
+          Object {
+            "Actions": Array [
+              Object {
+                "ActionTypeId": Object {
+                  "Category": "Source",
+                  "Owner": "AWS",
+                  "Provider": "S3",
+                  "Version": "1",
+                },
+                "Configuration": Object {
+                  "S3Bucket": Object {
+                    "Ref": "EcrSyncArtifactBucket592E7EE3",
+                  },
+                  "S3ObjectKey": "images.zip",
+                },
+                "Name": "S3Source",
+                "OutputArtifacts": Array [
+                  Object {
+                    "Name": "Artifact_Trigger_S3Source",
+                  },
+                ],
+                "RoleArn": Object {
+                  "Fn::GetAtt": Array [
+                    "EcrSyncPullPushPipelineTriggerS3SourceCodePipelineActionRoleF10FFF80",
+                    "Arn",
+                  ],
+                },
+                "RunOrder": 1,
+              },
+            ],
+            "Name": "Trigger",
+          },
+          Object {
+            "Actions": Array [
+              Object {
+                "ActionTypeId": Object {
+                  "Category": "Build",
+                  "Owner": "AWS",
+                  "Provider": "CodeBuild",
+                  "Version": "1",
+                },
+                "Configuration": Object {
+                  "ProjectName": Object {
+                    "Ref": "EcrSyncbuildSpecBuildC654CA71",
+                  },
+                },
+                "InputArtifacts": Array [
+                  Object {
+                    "Name": "Artifact_Trigger_S3Source",
+                  },
+                ],
+                "Name": "Build",
+                "RoleArn": Object {
+                  "Fn::GetAtt": Array [
+                    "EcrSyncPullPushPipelinePullPushBuildCodePipelineActionRoleC50CF664",
+                    "Arn",
+                  ],
+                },
+                "RunOrder": 1,
+              },
+            ],
+            "Name": "PullPush",
+          },
+        ],
+      },
+      "Type": "AWS::CodePipeline::Pipeline",
+    },
+    "EcrSyncPullPushPipelinePullPushBuildCodePipelineActionRoleC50CF664": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "AWS": Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      "arn:",
+                      Object {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::",
+                      Object {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":root",
+                    ],
+                  ],
+                },
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "EcrSyncPullPushPipelinePullPushBuildCodePipelineActionRoleDefaultPolicy84784C85": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "codebuild:BatchGetBuilds",
+                "codebuild:StartBuild",
+                "codebuild:StopBuild",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "EcrSyncbuildSpecBuildC654CA71",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "EcrSyncPullPushPipelinePullPushBuildCodePipelineActionRoleDefaultPolicy84784C85",
+        "Roles": Array [
+          Object {
+            "Ref": "EcrSyncPullPushPipelinePullPushBuildCodePipelineActionRoleC50CF664",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "EcrSyncPullPushPipelineRole3DC166BF": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "codepipeline.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "EcrSyncPullPushPipelineRoleDefaultPolicy553B48F9": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "EcrSyncArtifactBucket592E7EE3",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "EcrSyncArtifactBucket592E7EE3",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "EcrSyncPullPushPipelineTriggerS3SourceCodePipelineActionRoleF10FFF80",
+                  "Arn",
+                ],
+              },
+            },
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "EcrSyncPullPushPipelinePullPushBuildCodePipelineActionRoleC50CF664",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "EcrSyncPullPushPipelineRoleDefaultPolicy553B48F9",
+        "Roles": Array [
+          Object {
+            "Ref": "EcrSyncPullPushPipelineRole3DC166BF",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "EcrSyncPullPushPipelineTriggerS3SourceCodePipelineActionRoleDefaultPolicy602F5196": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "EcrSyncArtifactBucket592E7EE3",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "EcrSyncArtifactBucket592E7EE3",
+                          "Arn",
+                        ],
+                      },
+                      "/images.zip",
+                    ],
+                  ],
+                },
+              ],
+            },
+            Object {
+              "Action": Array [
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "EcrSyncArtifactBucket592E7EE3",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "EcrSyncArtifactBucket592E7EE3",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "EcrSyncPullPushPipelineTriggerS3SourceCodePipelineActionRoleDefaultPolicy602F5196",
+        "Roles": Array [
+          Object {
+            "Ref": "EcrSyncPullPushPipelineTriggerS3SourceCodePipelineActionRoleF10FFF80",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "EcrSyncPullPushPipelineTriggerS3SourceCodePipelineActionRoleF10FFF80": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "AWS": Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      "arn:",
+                      Object {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::",
+                      Object {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":root",
+                    ],
+                  ],
+                },
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "EcrSyncScheduleGetImageTags8702FF98": Object {
+      "Properties": Object {
+        "ScheduleExpression": "rate(1 day)",
+        "State": "ENABLED",
+        "Targets": Array [
+          Object {
+            "Arn": Object {
+              "Fn::GetAtt": Array [
+                "EcrSynclambda666DEE94",
+                "Arn",
+              ],
+            },
+            "Id": "Target0",
+          },
+        ],
+      },
+      "Type": "AWS::Events::Rule",
+    },
+    "EcrSyncScheduleGetImageTagsAllowEventRuletestEcrSynclambda082C020989820237": Object {
+      "Properties": Object {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": Object {
+          "Fn::GetAtt": Array [
+            "EcrSynclambda666DEE94",
+            "Arn",
+          ],
+        },
+        "Principal": "events.amazonaws.com",
+        "SourceArn": Object {
+          "Fn::GetAtt": Array [
+            "EcrSyncScheduleGetImageTags8702FF98",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Permission",
+    },
+    "EcrSyncbuildRoleDefaultPolicyB38D9829": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "EcrSyncgotenberggotenbergC31A09B8",
+                  "Arn",
+                ],
+              },
+            },
+            Object {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            Object {
+              "Action": Array [
+                "ecr:PutImage",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "EcrSyncgotenberggotenbergC31A09B8",
+                  "Arn",
+                ],
+              },
+            },
+            Object {
+              "Action": Array [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      "arn:",
+                      Object {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":logs:",
+                      Object {
+                        "Ref": "AWS::Region",
+                      },
+                      ":",
+                      Object {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":log-group:/aws/codebuild/",
+                      Object {
+                        "Ref": "EcrSyncbuildSpecBuildC654CA71",
+                      },
+                    ],
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      "arn:",
+                      Object {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":logs:",
+                      Object {
+                        "Ref": "AWS::Region",
+                      },
+                      ":",
+                      Object {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":log-group:/aws/codebuild/",
+                      Object {
+                        "Ref": "EcrSyncbuildSpecBuildC654CA71",
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            Object {
+              "Action": Array [
+                "codebuild:CreateReportGroup",
+                "codebuild:CreateReport",
+                "codebuild:UpdateReport",
+                "codebuild:BatchPutTestCases",
+                "codebuild:BatchPutCodeCoverages",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::Join": Array [
+                  "",
+                  Array [
+                    "arn:",
+                    Object {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":codebuild:",
+                    Object {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    Object {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":report-group/",
+                    Object {
+                      "Ref": "EcrSyncbuildSpecBuildC654CA71",
+                    },
+                    "-*",
+                  ],
+                ],
+              },
+            },
+            Object {
+              "Action": Array [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "EcrSyncArtifactBucket592E7EE3",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "EcrSyncArtifactBucket592E7EE3",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "EcrSyncbuildRoleDefaultPolicyB38D9829",
+        "Roles": Array [
+          Object {
+            "Ref": "EcrSyncbuildRoleE38D195E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "EcrSyncbuildRoleE38D195E": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "codebuild.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "EcrSyncbuildSpecBuildC654CA71": Object {
+      "Properties": Object {
+        "Artifacts": Object {
+          "Type": "CODEPIPELINE",
+        },
+        "Cache": Object {
+          "Type": "NO_CACHE",
+        },
+        "EncryptionKey": "alias/aws/s3",
+        "Environment": Object {
+          "ComputeType": "BUILD_GENERAL1_SMALL",
+          "EnvironmentVariables": Array [
+            Object {
+              "Name": "AWS_ACCOUNT_ID",
+              "Type": "PLAINTEXT",
+              "Value": Object {
+                "Ref": "AWS::AccountId",
+              },
+            },
+          ],
+          "Image": "aws/codebuild/amazonlinux2-x86_64-standard:3.0",
+          "ImagePullCredentialsType": "CODEBUILD",
+          "PrivilegedMode": true,
+          "Type": "LINUX_CONTAINER",
+        },
+        "ServiceRole": Object {
+          "Fn::GetAtt": Array [
+            "EcrSyncbuildRoleE38D195E",
+            "Arn",
+          ],
+        },
+        "Source": Object {
+          "BuildSpec": "{
+  \\"version\\": \\"0.2\\",
+  \\"phases\\": {
+    \\"install\\": {
+      \\"runtime-versions\\": {
+        \\"docker\\": 18
+      },
+      \\"commands\\": [
+        \\"aws --version\\",
+        \\"curl \\\\\\"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\\\\\\" -o \\\\\\"awscliv2.zip\\\\\\"\\",
+        \\"unzip -q awscliv2.zip\\",
+        \\"./aws/install\\",
+        \\"aws --version\\"
+      ]
+    },
+    \\"build\\": {
+      \\"commands\\": [
+        \\" set -e\\\\n                 \\\\n                 cat images.csv\\\\n                 while IFS=, read -r dockerImage ecrImage tag\\\\n                 do\\\\n                   echo \\\\\\"$dockerImage:$tag\\\\\\"\\\\n                   docker pull $dockerImage:$tag\\\\n                   docker tag $dockerImage:$tag $ecrImage:$tag\\\\n                   aws ecr get-login-password | docker login --username AWS --password-stdin \${AWS_ACCOUNT_ID}.dkr.ecr.\${AWS_REGION}.amazonaws.com\\\\n                   docker push $ecrImage:$tag\\\\n                 done < images.csv\\\\n\\"
+      ]
+    }
+  }
+}",
+          "Type": "CODEPIPELINE",
+        },
+      },
+      "Type": "AWS::CodeBuild::Project",
+    },
+    "EcrSyncgotenberggotenbergC31A09B8": Object {
+      "DeletionPolicy": "Retain",
+      "Properties": Object {
+        "RepositoryName": "gotenberg/gotenberg",
+      },
+      "Type": "AWS::ECR::Repository",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "EcrSynclambda666DEE94": Object {
+      "DependsOn": Array [
+        "EcrSynclambdaServiceRoleDefaultPolicy959258E3",
+        "EcrSynclambdaServiceRole1B33F85D",
+      ],
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "282a90a780573986c63413489422cab97b2146732f2cf40ed9b79016e73d1918.zip",
+        },
+        "Environment": Object {
+          "Variables": Object {
+            "AWS_ACCOUNT_ID": Object {
+              "Ref": "AWS::AccountId",
+            },
+            "AWS_NODEJS_CONNECTION_REUSE_ENABLED": "1",
+            "BUCKET_NAME": Object {
+              "Ref": "EcrSyncArtifactBucket592E7EE3",
+            },
+            "IMAGES": "[{\\"imageName\\":\\"gotenberg/gotenberg\\",\\"includeTags\\":[\\"^7$\\"]}]",
+            "REGION": Object {
+              "Ref": "AWS::Region",
+            },
+            "REPO_PREFIX": "",
+          },
+        },
+        "Handler": "index.handler",
+        "MemorySize": 256,
+        "Role": Object {
+          "Fn::GetAtt": Array [
+            "EcrSynclambdaServiceRole1B33F85D",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs12.x",
+        "Timeout": 600,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "EcrSynclambdaLogRetention648F9719": Object {
+      "Properties": Object {
+        "LogGroupName": Object {
+          "Fn::Join": Array [
+            "",
+            Array [
+              "/aws/lambda/",
+              Object {
+                "Ref": "EcrSynclambda666DEE94",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": Object {
+          "Fn::GetAtt": Array [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "EcrSynclambdaServiceRole1B33F85D": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
+              "",
+              Array [
+                "arn:",
+                Object {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "EcrSynclambdaServiceRoleDefaultPolicy959258E3": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::Join": Array [
+                  "",
+                  Array [
+                    Object {
+                      "Fn::GetAtt": Array [
+                        "EcrSyncArtifactBucket592E7EE3",
+                        "Arn",
+                      ],
+                    },
+                    "/*",
+                  ],
+                ],
+              },
+            },
+            Object {
+              "Action": "ecr:ListImages",
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "EcrSyncgotenberggotenbergC31A09B8",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "EcrSynclambdaServiceRoleDefaultPolicy959258E3",
+        "Roles": Array [
+          Object {
+            "Ref": "EcrSynclambdaServiceRole1B33F85D",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "EcsDefaultClusterMnL3mNNYNVpc18E0451A": Object {
+      "Type": "AWS::ECS::Cluster",
+    },
+    "GotenbergLB95C190B1": Object {
+      "Properties": Object {
+        "LoadBalancerAttributes": Array [
+          Object {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internal",
+        "SecurityGroups": Array [
+          Object {
+            "Fn::GetAtt": Array [
+              "GotenbergLBSecurityGroup49775454",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": Array [
+          Object {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          Object {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "GotenbergLBPublicListener076E647A": Object {
+      "Properties": Object {
+        "DefaultActions": Array [
+          Object {
+            "TargetGroupArn": Object {
+              "Ref": "GotenbergLBPublicListenerECSGroupCA478100",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": Object {
+          "Ref": "GotenbergLB95C190B1",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "GotenbergLBPublicListenerECSGroupCA478100": Object {
+      "Properties": Object {
+        "HealthCheckEnabled": true,
+        "HealthCheckPath": "/health",
+        "Port": 80,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": Array [
+          Object {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "GotenbergLBSecurityGroup49775454": Object {
+      "Properties": Object {
+        "GroupDescription": "Automatically created Security Group for ELB testGotenbergLB53673266",
+        "SecurityGroupIngress": Array [
+          Object {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow from anyone on port 80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "GotenbergLBSecurityGrouptotestGotenbergServiceSecurityGroupCE87662930004DF68640": Object {
+      "Properties": Object {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": Object {
+          "Fn::GetAtt": Array [
+            "GotenbergServiceSecurityGroupC6884589",
+            "GroupId",
+          ],
+        },
+        "FromPort": 3000,
+        "GroupId": Object {
+          "Fn::GetAtt": Array [
+            "GotenbergLBSecurityGroup49775454",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "GotenbergService037E0CA9": Object {
+      "DependsOn": Array [
+        "GotenbergLBPublicListenerECSGroupCA478100",
+        "GotenbergLBPublicListener076E647A",
+      ],
+      "Properties": Object {
+        "Cluster": Object {
+          "Ref": "EcsDefaultClusterMnL3mNNYNVpc18E0451A",
+        },
+        "DeploymentConfiguration": Object {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": Array [
+          Object {
+            "ContainerName": "web",
+            "ContainerPort": 3000,
+            "TargetGroupArn": Object {
+              "Ref": "GotenbergLBPublicListenerECSGroupCA478100",
+            },
+          },
+        ],
+        "NetworkConfiguration": Object {
+          "AwsvpcConfiguration": Object {
+            "AssignPublicIp": "ENABLED",
+            "SecurityGroups": Array [
+              Object {
+                "Fn::GetAtt": Array [
+                  "GotenbergServiceSecurityGroupC6884589",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": Array [
+              Object {
+                "Ref": "VpcPublicSubnet1Subnet5C2D37C4",
+              },
+              Object {
+                "Ref": "VpcPublicSubnet2Subnet691E08A3",
+              },
+            ],
+          },
+        },
+        "TaskDefinition": Object {
+          "Ref": "GotenbergTaskDef51D9CF43",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "GotenbergServiceSecurityGroupC6884589": Object {
+      "Properties": Object {
+        "GroupDescription": "test/Gotenberg/Service/SecurityGroup",
+        "SecurityGroupEgress": Array [
+          Object {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "GotenbergServiceSecurityGroupfromtestGotenbergLBSecurityGroupB7562E943000EBE00BA0": Object {
+      "Properties": Object {
+        "Description": "Load balancer to target",
+        "FromPort": 3000,
+        "GroupId": Object {
+          "Fn::GetAtt": Array [
+            "GotenbergServiceSecurityGroupC6884589",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": Object {
+          "Fn::GetAtt": Array [
+            "GotenbergLBSecurityGroup49775454",
+            "GroupId",
+          ],
+        },
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "GotenbergTaskDef51D9CF43": Object {
+      "Properties": Object {
+        "ContainerDefinitions": Array [
+          Object {
+            "Essential": true,
+            "Image": Object {
+              "Fn::Join": Array [
+                "",
+                Array [
+                  Object {
+                    "Ref": "AWS::AccountId",
+                  },
+                  ".dkr.ecr.",
+                  Object {
+                    "Ref": "AWS::Region",
+                  },
+                  ".",
+                  Object {
+                    "Ref": "AWS::URLSuffix",
+                  },
+                  "/gotenberg/gotenberg:7",
+                ],
+              ],
+            },
+            "LogConfiguration": Object {
+              "LogDriver": "awslogs",
+              "Options": Object {
+                "awslogs-group": Object {
+                  "Ref": "GotenbergTaskDefwebLogGroup5EBC5397",
+                },
+                "awslogs-region": Object {
+                  "Ref": "AWS::Region",
+                },
+                "awslogs-stream-prefix": "Gotenberg",
+              },
+            },
+            "Name": "web",
+            "PortMappings": Array [
+              Object {
+                "ContainerPort": 3000,
+                "Protocol": "tcp",
+              },
+            ],
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": Object {
+          "Fn::GetAtt": Array [
+            "GotenbergTaskDefExecutionRole9DFD1174",
+            "Arn",
+          ],
+        },
+        "Family": "testGotenbergTaskDef40D8B00F",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": Array [
+          "FARGATE",
+        ],
+        "TaskRoleArn": Object {
+          "Fn::GetAtt": Array [
+            "GotenbergTaskDefTaskRole00C72FAA",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "GotenbergTaskDefExecutionRole9DFD1174": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GotenbergTaskDefExecutionRoleDefaultPolicy5871B83B": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::Join": Array [
+                  "",
+                  Array [
+                    "arn:",
+                    Object {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":ecr:",
+                    Object {
+                      "Ref": "AWS::Region",
+                    },
+                    ":",
+                    Object {
+                      "Ref": "AWS::AccountId",
+                    },
+                    ":repository/gotenberg/gotenberg",
+                  ],
+                ],
+              },
+            },
+            Object {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            Object {
+              "Action": Array [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": Object {
+                "Fn::GetAtt": Array [
+                  "GotenbergTaskDefwebLogGroup5EBC5397",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "GotenbergTaskDefExecutionRoleDefaultPolicy5871B83B",
+        "Roles": Array [
+          Object {
+            "Ref": "GotenbergTaskDefExecutionRole9DFD1174",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "GotenbergTaskDefTaskRole00C72FAA": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "GotenbergTaskDefwebLogGroup5EBC5397": Object {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": Object {
+      "DependsOn": Array [
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      ],
+      "Properties": Object {
+        "Code": Object {
+          "S3Bucket": Object {
+            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
+          },
+          "S3Key": "e5032a7ed03a7762b99560439c17f58d046a35d40ebf64ba70c63157df388563.zip",
+        },
+        "Handler": "index.handler",
+        "Role": Object {
+          "Fn::GetAtt": Array [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs14.x",
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": Object {
+      "Properties": Object {
+        "AssumeRolePolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": Object {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": Array [
+          Object {
+            "Fn::Join": Array [
+              "",
+              Array [
+                "arn:",
+                Object {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": Object {
+      "Properties": Object {
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": Array [
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "Roles": Array [
+          Object {
+            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "PdfBucketFA9E115A": Object {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "PdfBucketPolicy89599CFB": Object {
+      "Properties": Object {
+        "Bucket": Object {
+          "Ref": "PdfBucketFA9E115A",
+        },
+        "PolicyDocument": Object {
+          "Statement": Array [
+            Object {
+              "Action": "s3:*",
+              "Condition": Object {
+                "Bool": Object {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": Object {
+                "AWS": "*",
+              },
+              "Resource": Array [
+                Object {
+                  "Fn::GetAtt": Array [
+                    "PdfBucketFA9E115A",
+                    "Arn",
+                  ],
+                },
+                Object {
+                  "Fn::Join": Array [
+                    "",
+                    Array [
+                      Object {
+                        "Fn::GetAtt": Array [
+                          "PdfBucketFA9E115A",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "Vpc8378EB38": Object {
+      "Properties": Object {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": Array [
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "VpcIGWD7BA715C": Object {
+      "Properties": Object {
+        "Tags": Array [
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "VpcIsolatedSubnet1RouteTable4771E3E5": Object {
+      "Properties": Object {
+        "Tags": Array [
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/IsolatedSubnet1",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcIsolatedSubnet1RouteTableAssociationD300FCBB": Object {
+      "Properties": Object {
+        "RouteTableId": Object {
+          "Ref": "VpcIsolatedSubnet1RouteTable4771E3E5",
+        },
+        "SubnetId": Object {
+          "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcIsolatedSubnet1SubnetE48C5737": Object {
+      "Properties": Object {
+        "AvailabilityZone": Object {
+          "Fn::Select": Array [
+            0,
+            Object {
+              "Fn::GetAZs": "",
+            },
+          ],
+        },
+        "CidrBlock": "10.0.128.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": Array [
+          Object {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Isolated",
+          },
+          Object {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/IsolatedSubnet1",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcIsolatedSubnet2RouteTable1D30AF7D": Object {
+      "Properties": Object {
+        "Tags": Array [
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/IsolatedSubnet2",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcIsolatedSubnet2RouteTableAssociationF7B18CCA": Object {
+      "Properties": Object {
+        "RouteTableId": Object {
+          "Ref": "VpcIsolatedSubnet2RouteTable1D30AF7D",
+        },
+        "SubnetId": Object {
+          "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcIsolatedSubnet2Subnet16364B91": Object {
+      "Properties": Object {
+        "AvailabilityZone": Object {
+          "Fn::Select": Array [
+            1,
+            Object {
+              "Fn::GetAZs": "",
+            },
+          ],
+        },
+        "CidrBlock": "10.0.192.0/18",
+        "MapPublicIpOnLaunch": false,
+        "Tags": Array [
+          Object {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Isolated",
+          },
+          Object {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/IsolatedSubnet2",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcPublicSubnet1DefaultRoute3DA9E72A": Object {
+      "DependsOn": Array [
+        "VpcVPCGWBF912B6E",
+      ],
+      "Properties": Object {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": Object {
+          "Ref": "VpcIGWD7BA715C",
+        },
+        "RouteTableId": Object {
+          "Ref": "VpcPublicSubnet1RouteTable6C95E38E",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VpcPublicSubnet1RouteTable6C95E38E": Object {
+      "Properties": Object {
+        "Tags": Array [
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcPublicSubnet1RouteTableAssociation97140677": Object {
+      "Properties": Object {
+        "RouteTableId": Object {
+          "Ref": "VpcPublicSubnet1RouteTable6C95E38E",
+        },
+        "SubnetId": Object {
+          "Ref": "VpcPublicSubnet1Subnet5C2D37C4",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcPublicSubnet1Subnet5C2D37C4": Object {
+      "Properties": Object {
+        "AvailabilityZone": Object {
+          "Fn::Select": Array [
+            0,
+            Object {
+              "Fn::GetAZs": "",
+            },
+          ],
+        },
+        "CidrBlock": "10.0.0.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": Array [
+          Object {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          Object {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/PublicSubnet1",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcPublicSubnet2DefaultRoute97F91067": Object {
+      "DependsOn": Array [
+        "VpcVPCGWBF912B6E",
+      ],
+      "Properties": Object {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": Object {
+          "Ref": "VpcIGWD7BA715C",
+        },
+        "RouteTableId": Object {
+          "Ref": "VpcPublicSubnet2RouteTable94F7E489",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VpcPublicSubnet2RouteTable94F7E489": Object {
+      "Properties": Object {
+        "Tags": Array [
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcPublicSubnet2RouteTableAssociationDD5762D8": Object {
+      "Properties": Object {
+        "RouteTableId": Object {
+          "Ref": "VpcPublicSubnet2RouteTable94F7E489",
+        },
+        "SubnetId": Object {
+          "Ref": "VpcPublicSubnet2Subnet691E08A3",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcPublicSubnet2Subnet691E08A3": Object {
+      "Properties": Object {
+        "AvailabilityZone": Object {
+          "Fn::Select": Array [
+            1,
+            Object {
+              "Fn::GetAZs": "",
+            },
+          ],
+        },
+        "CidrBlock": "10.0.64.0/18",
+        "MapPublicIpOnLaunch": true,
+        "Tags": Array [
+          Object {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          Object {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          Object {
+            "Key": "Name",
+            "Value": "test/Vpc/PublicSubnet2",
+          },
+        ],
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcVPCGWBF912B6E": Object {
+      "Properties": Object {
+        "InternetGatewayId": Object {
+          "Ref": "VpcIGWD7BA715C",
+        },
+        "VpcId": Object {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
     },
   },
   "Rules": Object {
