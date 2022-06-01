@@ -39,7 +39,7 @@
     "jest-junit": "^13",
     "json-schema": "^0.4.0",
     "npm-check-updates": "^12",
-    "projen": "^0.56.38",
+    "projen": "^0.56.41",
     "ts-jest": "^27",
     "ts-node": "^10",
     "typescript": "^4.7.2"
@@ -48,7 +48,7 @@
     "@aws-solutions-constructs/aws-s3-stepfunctions": "^2.8.0",
     "@pgarbe/cdk-ecr-sync": "^0.5.28",
     "aws-cdk-lib": "^2.25.0",
-    "aws-sdk": "^2.1145.0",
+    "aws-sdk": "^2.1146.0",
     "constructs": "^10.0.5",
     "gotenberg-js-client": "^0.7.2"
   },
