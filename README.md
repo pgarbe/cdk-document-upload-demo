@@ -1,6 +1,7 @@
 # Serverless Demo Application
 Convert uploaded office documents to PDF using project Gotenberg. Serverless app based on StepFunctions, S3, EventBridge, Fargate, and Lambda.
 
+![Architecture Diagram](docs/architecture.drawio.png)
 ## Links
 
 https://gotenberg.dev/  
