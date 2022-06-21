@@ -3,7 +3,8 @@ import * as pj from 'projen';
 const project = new pj.awscdk.AwsCdkTypeScriptApp({
   cdkVersion: '2.25.0',
   defaultReleaseBranch: 'main',
-  name: 'cdk-document-upload-demo',
+  name: '@pgarbe/cdk-document-upload-demo',
+  repository: 'https://github.com/pgarbe/cdk-document-upload-demo.git',
 
   projenrcTs: true,
 
